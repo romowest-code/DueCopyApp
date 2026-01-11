@@ -18,6 +18,14 @@ export const defaultSettings: Settings = {
   showCompletedTasks: false,
 };
 
+// Default buckets
+export const defaultBuckets: Bucket[] = [
+  { id: 'bucket-materials', name: 'Materials to Get', color: '#F97316', createdDate: new Date().toISOString() },
+  { id: 'bucket-callbacks', name: 'Callbacks', color: '#3B82F6', createdDate: new Date().toISOString() },
+  { id: 'bucket-appointments', name: 'Appointments', color: '#22C55E', createdDate: new Date().toISOString() },
+  { id: 'bucket-invoices', name: 'Invoices', color: '#A855F7', createdDate: new Date().toISOString() },
+];
+
 // Tasks
 export function getTasks(): Task[] {
   if (typeof window === 'undefined') return [];
@@ -98,7 +106,12 @@ export function saveSettings(settings: Settings): void {
 export function getBuckets(): Bucket[] {
   if (typeof window === 'undefined') return [];
   const data = localStorage.getItem(BUCKETS_KEY);
-  return data ? JSON.parse(data) : [];
+  if (data) {
+    return JSON.parse(data);
+  }
+  // Initialize with default buckets for new users
+  saveBuckets(defaultBuckets);
+  return defaultBuckets;
 }
 
 export function saveBuckets(buckets: Bucket[]): void {
