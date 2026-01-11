@@ -1,0 +1,95 @@
+name: ContractorMustDo
+options:
+  bundleIdPrefix: com.contractormustdo
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "15.0"
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+
+targets:
+  ContractorMustDo:
+    type: application
+    platform: iOS
+    sources:
+      - path: ContractorMustDo/App
+      - path: ContractorMustDo/Models
+      - path: ContractorMustDo/Views
+      - path: ContractorMustDo/ViewModels
+      - path: ContractorMustDo/Services
+      - path: ContractorMustDo/Intents
+      - path: ContractorMustDo/Resources
+    resources:
+      - path: ContractorMustDo/Resources/Assets.xcassets
+    settings:
+      base:
+        INFOPLIST_FILE: ContractorMustDo/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ContractorMustDo/ContractorMustDo.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.contractormustdo.app
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    entitlements:
+      path: ContractorMustDo/ContractorMustDo.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.contractormustdo.app
+        com.apple.developer.siri: true
+    dependencies:
+      - target: TaskWidgetExtension
+
+  TaskWidgetExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ContractorMustDo/Widgets/TaskWidget
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.contractormustdo.app.widget
+        INFOPLIST_KEY_CFBundleDisplayName: Task Widget
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME: WidgetBackground
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_EMIT_LOC_STRINGS: YES
+    entitlements:
+      path: ContractorMustDo/ContractorMustDo.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.contractormustdo.app
+
+  ContractorMustDoTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ContractorMustDoTests
+    dependencies:
+      - target: ContractorMustDo
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.contractormustdo.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  ContractorMustDo:
+    build:
+      targets:
+        ContractorMustDo: all
+        TaskWidgetExtension: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - ContractorMustDoTests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

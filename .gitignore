@@ -1,0 +1,61 @@
+# Xcode
+*.xcodeproj/
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+*.xcworkspace/
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# CocoaPods
+Pods/
+*.xcworkspace
+
+# Carthage
+Carthage/Build/
+Carthage/Checkouts/
+
+# Build artifacts
+build/
+*.o
+*.a
+*.dylib
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# IDEs
+*.swp
+*.swo
+*~
+.idea/
+*.iml
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Sensitive files
+*.mobileprovision
+*.p12
+*.cer
+*.pem
+Secrets/
+.claude/
