@@ -1,3 +1,12 @@
+// Bucket Types
+
+export interface Bucket {
+  id: string;
+  name: string;
+  color: string; // Hex color e.g., "#3B82F6"
+  createdDate: string;
+}
+
 // Task Types
 
 export type NagLevel = 'gentle' | 'moderate' | 'relentless';
@@ -31,6 +40,9 @@ export interface Task {
 
   // Notification
   notificationsEnabled: boolean;
+
+  // Bucket
+  bucketId: string | null; // null = General/uncategorized
 }
 
 // Timer Types

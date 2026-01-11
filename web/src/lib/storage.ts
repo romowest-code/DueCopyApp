@@ -1,8 +1,9 @@
-import { Task, Timer, Settings } from '@/types';
+import { Task, Timer, Settings, Bucket } from '@/types';
 
 const TASKS_KEY = 'contractor-must-do-tasks';
 const TIMERS_KEY = 'contractor-must-do-timers';
 const SETTINGS_KEY = 'contractor-must-do-settings';
+const BUCKETS_KEY = 'contractor-must-do-buckets';
 
 // Default settings
 export const defaultSettings: Settings = {
@@ -91,4 +92,49 @@ export function getSettings(): Settings {
 export function saveSettings(settings: Settings): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+// Buckets
+export function getBuckets(): Bucket[] {
+  if (typeof window === 'undefined') return [];
+  const data = localStorage.getItem(BUCKETS_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+export function saveBuckets(buckets: Bucket[]): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(BUCKETS_KEY, JSON.stringify(buckets));
+}
+
+export function addBucket(bucket: Bucket): void {
+  const buckets = getBuckets();
+  buckets.push(bucket);
+  saveBuckets(buckets);
+}
+
+export function updateBucket(updatedBucket: Bucket): void {
+  const buckets = getBuckets();
+  const index = buckets.findIndex(b => b.id === updatedBucket.id);
+  if (index !== -1) {
+    buckets[index] = updatedBucket;
+    saveBuckets(buckets);
+  }
+}
+
+export function deleteBucket(bucketId: string): void {
+  const buckets = getBuckets().filter(b => b.id !== bucketId);
+  saveBuckets(buckets);
+}
+
+// Delete bucket and reassign all tasks to General
+export function deleteBucketAndReassignTasks(bucketId: string): void {
+  // Remove the bucket
+  deleteBucket(bucketId);
+
+  // Reassign tasks to General (null)
+  const tasks = getTasks();
+  const updatedTasks = tasks.map(task =>
+    task.bucketId === bucketId ? { ...task, bucketId: null } : task
+  );
+  saveTasks(updatedTasks);
 }

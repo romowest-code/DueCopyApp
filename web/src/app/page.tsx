@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Task, Timer } from '@/types';
-import { getTasks, getTimers, getSettings, saveTasks } from '@/lib/storage';
+import { Task, Timer, Bucket } from '@/types';
+import { getTasks, getTimers, getSettings, saveTasks, getBuckets } from '@/lib/storage';
 import { requestNotificationPermission, notificationScheduler } from '@/lib/notifications';
 import TaskList from '@/components/TaskList';
 import TimerList from '@/components/TimerList';
@@ -15,12 +15,14 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('tasks');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [timers, setTimers] = useState<Timer[]>([]);
+  const [buckets, setBuckets] = useState<Bucket[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load data on mount
   useEffect(() => {
     setTasks(getTasks());
     setTimers(getTimers());
+    setBuckets(getBuckets());
     setIsLoaded(true);
 
     // Request notification permission
@@ -98,13 +100,13 @@ export default function Home() {
       {/* Content */}
       <div className="min-h-[calc(100vh-200px)]">
         {activeTab === 'tasks' && (
-          <TaskList tasks={tasks} setTasks={setTasks} />
+          <TaskList tasks={tasks} setTasks={setTasks} buckets={buckets} />
         )}
         {activeTab === 'timers' && (
           <TimerList timers={timers} setTimers={setTimers} />
         )}
         {activeTab === 'settings' && (
-          <Settings onThemeChange={applyTheme} />
+          <Settings onThemeChange={applyTheme} buckets={buckets} setBuckets={setBuckets} />
         )}
       </div>
 

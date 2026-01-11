@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Task, NagLevel, SnoozeInterval, RecurrenceType } from '@/types';
+import { Task, NagLevel, SnoozeInterval, RecurrenceType, Bucket } from '@/types';
 import { saveTasks, getSettings } from '@/lib/storage';
 import { parseNaturalLanguage } from '@/lib/parser';
 import { notificationScheduler } from '@/lib/notifications';
@@ -11,19 +11,30 @@ import { formatDistanceToNow, format, isPast, isToday } from 'date-fns';
 interface TaskListProps {
   tasks: Task[];
   setTasks: (tasks: Task[]) => void;
+  buckets: Bucket[];
 }
 
-export default function TaskList({ tasks, setTasks }: TaskListProps) {
+export default function TaskList({ tasks, setTasks, buckets }: TaskListProps) {
   const [quickAddText, setQuickAddText] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [filter, setFilter] = useState<'all' | 'overdue' | 'today' | 'upcoming'>('all');
+  const [bucketFilter, setBucketFilter] = useState<string | 'all'>('all');
 
   const settings = getSettings();
 
   // Filter tasks
   const filteredTasks = tasks.filter(task => {
     if (!settings.showCompletedTasks && task.isCompleted) return false;
+
+    // Bucket filter
+    if (bucketFilter !== 'all') {
+      if (bucketFilter === 'general') {
+        if (task.bucketId !== null && task.bucketId !== undefined) return false;
+      } else {
+        if (task.bucketId !== bucketFilter) return false;
+      }
+    }
 
     const dueDate = new Date(task.dueDate);
     switch (filter) {
@@ -64,6 +75,9 @@ export default function TaskList({ tasks, setTasks }: TaskListProps) {
     recurrenceDays: number[] = [],
     recurrenceInterval: number = 1
   ): Task => {
+    // Inherit bucket from current filter (unless "all" or "general")
+    const inheritedBucketId = bucketFilter !== 'all' && bucketFilter !== 'general' ? bucketFilter : null;
+
     return {
       id: uuidv4(),
       title,
@@ -83,6 +97,7 @@ export default function TaskList({ tasks, setTasks }: TaskListProps) {
       recurrenceInterval,
       repeatFromCompletion: false,
       notificationsEnabled: true,
+      bucketId: inheritedBucketId,
     };
   };
 
@@ -126,6 +141,14 @@ export default function TaskList({ tasks, setTasks }: TaskListProps) {
   const deleteTask = (taskId: string) => {
     notificationScheduler.cancelTaskNotification(taskId);
     const updatedTasks = tasks.filter(t => t.id !== taskId);
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
+  };
+
+  const changeTaskBucket = (taskId: string, bucketId: string | null) => {
+    const updatedTasks = tasks.map(task =>
+      task.id === taskId ? { ...task, bucketId } : task
+    );
     setTasks(updatedTasks);
     saveTasks(updatedTasks);
   };
@@ -178,6 +201,49 @@ export default function TaskList({ tasks, setTasks }: TaskListProps) {
         ))}
       </div>
 
+      {/* Bucket Filter Tabs */}
+      {buckets.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          <button
+            onClick={() => setBucketFilter('all')}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              bucketFilter === 'all'
+                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+            }`}
+          >
+            All Buckets
+          </button>
+          <button
+            onClick={() => setBucketFilter('general')}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              bucketFilter === 'general'
+                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+            }`}
+          >
+            General
+          </button>
+          {buckets.map((bucket) => (
+            <button
+              key={bucket.id}
+              onClick={() => setBucketFilter(bucket.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                bucketFilter === bucket.id
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: bucket.color }}
+              />
+              {bucket.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Task List */}
       {filteredTasks.length === 0 ? (
         <div className="text-center py-12">
@@ -193,10 +259,12 @@ export default function TaskList({ tasks, setTasks }: TaskListProps) {
             <TaskRow
               key={task.id}
               task={task}
+              buckets={buckets}
               onToggleComplete={() => toggleComplete(task.id)}
               onSnooze={(minutes) => snoozeTask(task.id, minutes)}
               onDelete={() => deleteTask(task.id)}
               onEdit={() => setEditingTask(task)}
+              onChangeBucket={(bucketId) => changeTaskBucket(task.id, bucketId)}
             />
           ))}
         </div>
@@ -208,14 +276,20 @@ export default function TaskList({ tasks, setTasks }: TaskListProps) {
 // Task Row Component
 interface TaskRowProps {
   task: Task;
+  buckets: Bucket[];
   onToggleComplete: () => void;
   onSnooze: (minutes: number) => void;
   onDelete: () => void;
   onEdit: () => void;
+  onChangeBucket: (bucketId: string | null) => void;
 }
 
-function TaskRow({ task, onToggleComplete, onSnooze, onDelete, onEdit }: TaskRowProps) {
+function TaskRow({ task, buckets, onToggleComplete, onSnooze, onDelete, onEdit, onChangeBucket }: TaskRowProps) {
   const [showSnoozeMenu, setShowSnoozeMenu] = useState(false);
+  const [showBucketMenu, setShowBucketMenu] = useState(false);
+
+  // Find the bucket for this task
+  const taskBucket = buckets.find(b => b.id === task.bucketId);
 
   const dueDate = new Date(task.dueDate);
   const isOverdue = isPast(dueDate) && !task.isCompleted;
@@ -258,7 +332,7 @@ function TaskRow({ task, onToggleComplete, onSnooze, onDelete, onEdit }: TaskRow
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <p className={`font-medium ${task.isCompleted ? 'line-through text-gray-400' : 'text-gray-900 dark:text-white'}`}>
               {task.title}
             </p>
@@ -268,6 +342,18 @@ function TaskRow({ task, onToggleComplete, onSnooze, onDelete, onEdit }: TaskRow
                 <div key={i} className={`w-1 h-3 rounded-sm ${nagLevelColors[task.nagLevel]}`} />
               ))}
             </div>
+            {/* Bucket badge */}
+            {taskBucket && (
+              <span
+                className="px-2 py-0.5 text-xs rounded-full"
+                style={{
+                  backgroundColor: taskBucket.color + '20',
+                  color: taskBucket.color,
+                }}
+              >
+                {taskBucket.name}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-3 mt-1 text-sm">
@@ -328,6 +414,55 @@ function TaskRow({ task, onToggleComplete, onSnooze, onDelete, onEdit }: TaskRow
                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Bucket selector */}
+        {buckets.length > 0 && (
+          <div className="relative">
+            <button
+              onClick={() => setShowBucketMenu(!showBucketMenu)}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              title="Change bucket"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            </button>
+
+            {showBucketMenu && (
+              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-10 min-w-[140px]">
+                <button
+                  onClick={() => {
+                    onChangeBucket(null);
+                    setShowBucketMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 ${
+                    !task.bucketId ? 'font-medium text-blue-600 dark:text-blue-400' : ''
+                  }`}
+                >
+                  General
+                </button>
+                {buckets.map((bucket) => (
+                  <button
+                    key={bucket.id}
+                    onClick={() => {
+                      onChangeBucket(bucket.id);
+                      setShowBucketMenu(false);
+                    }}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 ${
+                      task.bucketId === bucket.id ? 'font-medium text-blue-600 dark:text-blue-400' : ''
+                    }`}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: bucket.color }}
+                    />
+                    {bucket.name}
                   </button>
                 ))}
               </div>

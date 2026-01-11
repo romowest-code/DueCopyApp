@@ -1,15 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings as SettingsType, Theme, NagLevel, SnoozeInterval, AlertSound } from '@/types';
+import { Settings as SettingsType, Theme, NagLevel, SnoozeInterval, AlertSound, Bucket } from '@/types';
 import { getSettings, saveSettings, defaultSettings } from '@/lib/storage';
 import { requestNotificationPermission, isNotificationSupported } from '@/lib/notifications';
+import BucketManager from './BucketManager';
 
 interface SettingsProps {
   onThemeChange: (theme: Theme) => void;
+  buckets: Bucket[];
+  setBuckets: (buckets: Bucket[]) => void;
 }
 
-export default function Settings({ onThemeChange }: SettingsProps) {
+export default function Settings({ onThemeChange, buckets, setBuckets }: SettingsProps) {
   const [settings, setSettings] = useState<SettingsType>(defaultSettings);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
 
@@ -236,6 +239,14 @@ export default function Settings({ onThemeChange }: SettingsProps) {
             </button>
           </div>
         </div>
+      </section>
+
+      {/* Buckets Section */}
+      <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <h2 className="px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide bg-gray-50 dark:bg-gray-900/50">
+          Buckets
+        </h2>
+        <BucketManager buckets={buckets} setBuckets={setBuckets} />
       </section>
 
       {/* About Section */}
