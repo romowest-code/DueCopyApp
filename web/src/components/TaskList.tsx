@@ -19,8 +19,42 @@ export default function TaskList({ tasks, setTasks, buckets }: TaskListProps) {
   const [filter, setFilter] = useState<'all' | 'overdue' | 'today' | 'upcoming'>('all');
   const [expandedBuckets, setExpandedBuckets] = useState<Set<string>>(new Set(['general', ...buckets.map(b => b.id)]));
   const [addingToBucket, setAddingToBucket] = useState<string | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importBucketId, setImportBucketId] = useState<string | null>(null);
 
   const settings = getSettings();
+
+  // Get tomorrow at 9 AM local time
+  const getTomorrowAt9AM = (): Date => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    return tomorrow;
+  };
+
+  // Import multiple tasks from text (one per line)
+  const handleImport = () => {
+    const lines = importText.split('\n').filter(line => line.trim());
+    if (lines.length === 0) return;
+
+    const defaultDueDate = getTomorrowAt9AM();
+    const newTasks: Task[] = lines.map(line => createTask(
+      line.trim(),
+      defaultDueDate,
+      null,
+      [],
+      1,
+      importBucketId
+    ));
+
+    const updatedTasks = [...tasks, ...newTasks];
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
+    setImportText('');
+    setImportBucketId(null);
+    setShowImportModal(false);
+  };
 
   // Filter tasks by date filter only
   const getFilteredTasks = (bucketTasks: Task[]) => {
@@ -278,28 +312,39 @@ export default function TaskList({ tasks, setTasks, buckets }: TaskListProps) {
 
   return (
     <div className="space-y-4">
-      {/* Filter Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {[
-          { id: 'all', label: 'All' },
-          { id: 'overdue', label: `Overdue${overdueCount > 0 ? ` (${overdueCount})` : ''}`, danger: true },
-          { id: 'today', label: `Today${todayCount > 0 ? ` (${todayCount})` : ''}` },
-          { id: 'upcoming', label: 'Upcoming' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setFilter(tab.id as typeof filter)}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-              filter === tab.id
-                ? tab.danger && overdueCount > 0
-                  ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                  : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Filter Tabs and Import Button */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {[
+            { id: 'all', label: 'All' },
+            { id: 'overdue', label: `Overdue${overdueCount > 0 ? ` (${overdueCount})` : ''}`, danger: true },
+            { id: 'today', label: `Today${todayCount > 0 ? ` (${todayCount})` : ''}` },
+            { id: 'upcoming', label: 'Upcoming' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setFilter(tab.id as typeof filter)}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                filter === tab.id
+                  ? tab.danger && overdueCount > 0
+                    ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                    : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setShowImportModal(true)}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors whitespace-nowrap"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          Import
+        </button>
       </div>
 
       {/* Bucket Accordions */}
@@ -321,6 +366,95 @@ export default function TaskList({ tasks, setTasks, buckets }: TaskListProps) {
           </svg>
           <p className="text-gray-500 dark:text-gray-400">No tasks yet</p>
           <p className="text-sm text-gray-400 dark:text-gray-500">Add a task to get started</p>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Import Tasks</h2>
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportText('');
+                  setImportBucketId(null);
+                }}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Paste tasks (one per line)
+                </label>
+                <textarea
+                  value={importText}
+                  onChange={(e) => setImportText(e.target.value)}
+                  placeholder="Buy lumber&#10;Call electrician&#10;Schedule inspection&#10;Order fixtures"
+                  rows={8}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  autoFocus
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {importText.split('\n').filter(l => l.trim()).length} task(s) to import
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Add to bucket
+                </label>
+                <select
+                  value={importBucketId || 'general'}
+                  onChange={(e) => setImportBucketId(e.target.value === 'general' ? null : e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="general">General</option>
+                  {buckets.map((bucket) => (
+                    <option key={bucket.id} value={bucket.id}>
+                      {bucket.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                <p className="text-sm text-blue-700 dark:text-blue-400">
+                  All imported tasks will be due tomorrow at 9:00 AM
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportText('');
+                  setImportBucketId(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleImport}
+                disabled={!importText.trim()}
+                className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Import {importText.split('\n').filter(l => l.trim()).length} Task(s)
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
