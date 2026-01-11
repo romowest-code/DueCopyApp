@@ -184,11 +184,12 @@ enum SnoozeDuration: String, AppEnum {
 
 // MARK: - App Shortcuts Provider
 
-/// Provides shortcuts for the Shortcuts app.
+/// Provides all shortcuts for the Shortcuts app.
 ///
 /// Supports REQ-5.4: Shortcuts app integration for automation
-struct TaskShortcuts: AppShortcutsProvider {
+struct AppShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
+        // Task shortcuts
         AppShortcut(
             intent: AddTaskIntent(),
             phrases: [
@@ -232,6 +233,40 @@ struct TaskShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Snooze Task",
             systemImageName: "clock.arrow.circlepath"
+        )
+
+        // Timer shortcuts
+        AppShortcut(
+            intent: StartTimerIntent(),
+            phrases: [
+                "Start a timer in \(.applicationName)",
+                "Set a timer in \(.applicationName)",
+                "Create timer in \(.applicationName)"
+            ],
+            shortTitle: "Start Timer",
+            systemImageName: "timer"
+        )
+
+        AppShortcut(
+            intent: StopTimerIntent(),
+            phrases: [
+                "Stop timer in \(.applicationName)",
+                "Cancel timer in \(.applicationName)",
+                "Stop all timers in \(.applicationName)"
+            ],
+            shortTitle: "Stop Timer",
+            systemImageName: "stop.circle"
+        )
+
+        AppShortcut(
+            intent: GetTimerStatusIntent(),
+            phrases: [
+                "Timer status in \(.applicationName)",
+                "Check timer in \(.applicationName)",
+                "How much time left in \(.applicationName)"
+            ],
+            shortTitle: "Timer Status",
+            systemImageName: "clock"
         )
     }
 }

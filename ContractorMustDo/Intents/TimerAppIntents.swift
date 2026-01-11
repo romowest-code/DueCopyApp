@@ -66,45 +66,7 @@ struct GetTimerStatusIntent: AppIntent {
     }
 }
 
-// MARK: - Timer Shortcuts
-
-/// Additional shortcuts for timer functionality.
-struct TimerShortcuts: AppShortcutsProvider {
-    static var appShortcuts: [AppShortcut] {
-        AppShortcut(
-            intent: StartTimerIntent(),
-            phrases: [
-                "Start a timer in \(.applicationName)",
-                "Set a timer in \(.applicationName)",
-                "Create timer in \(.applicationName)"
-            ],
-            shortTitle: "Start Timer",
-            systemImageName: "timer"
-        )
-
-        AppShortcut(
-            intent: StopTimerIntent(),
-            phrases: [
-                "Stop timer in \(.applicationName)",
-                "Cancel timer in \(.applicationName)",
-                "Stop all timers in \(.applicationName)"
-            ],
-            shortTitle: "Stop Timer",
-            systemImageName: "stop.circle"
-        )
-
-        AppShortcut(
-            intent: GetTimerStatusIntent(),
-            phrases: [
-                "Timer status in \(.applicationName)",
-                "Check timer in \(.applicationName)",
-                "How much time left in \(.applicationName)"
-            ],
-            shortTitle: "Timer Status",
-            systemImageName: "clock"
-        )
-    }
-}
+// Note: Timer shortcuts are combined in TaskAppIntents.swift AppShortcuts provider
 
 // MARK: - Intent Errors
 
