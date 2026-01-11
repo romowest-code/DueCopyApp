@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-rgb: 249, 250, 251;
+}
+
+.dark {
+  --foreground-rgb: 255, 255, 255;
+  --background-rgb: 17, 24, 39;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+/* Task row animations */
+.task-row {
+  transition: all 0.2s ease;
+}
+
+.task-row:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.dark .task-row:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Timer progress ring */
+.timer-ring {
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
