@@ -343,13 +343,21 @@ enum NagLevel: String, CaseIterable, Codable {
 /// Represents available snooze durations.
 ///
 /// - REQ-1.2: Customizable snooze intervals
-enum SnoozeInterval: CaseIterable, Codable {
+enum SnoozeInterval: CaseIterable, Codable, Hashable {
     case oneMinute
     case fiveMinutes
     case fifteenMinutes
     case thirtyMinutes
     case oneHour
     case custom(TimeInterval)
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(seconds)
+    }
+
+    static func == (lhs: SnoozeInterval, rhs: SnoozeInterval) -> Bool {
+        lhs.seconds == rhs.seconds
+    }
 
     /// All standard snooze intervals
     static var allCases: [SnoozeInterval] {
